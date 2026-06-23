@@ -190,6 +190,10 @@
   .admin-only { display:none !important; }
   .role-admin .admin-only { display: block !important; }
   .role-admin .nav-btn.admin-only { display: flex !important; }
+
+  /* SCANNER STATUS */
+  .scan-status { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:5; background:rgba(0,0,0,0.7); padding:8px 16px; border-radius:20px; font-size:12px; color:var(--text2); display:none; backdrop-filter:blur(4px); }
+  .scan-status.active { display:block; }
 </style>
 </head>
 <body>
@@ -236,6 +240,7 @@
             <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3"/></svg>
             <p>Toque para ativar<br>a câmera</p>
           </div>
+          <div class="scan-status" id="scanStatus">📷 Lendo QR Code...</div>
         </div>
         <button class="btn btn-ghost" id="btnStopScan" style="display:none" onclick="stopScan()">Parar câmera</button>
         <div id="scanResult"></div>
@@ -353,8 +358,8 @@
 // CONFIGURAÇÃO DO SUPABASE
 // Substitua pelos valores do seu projeto: Settings > API
 // ============================================
-const SUPABASE_URL = 'https://wqzbmlfiwmjhkjprnzrv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxemJtbGZpd21qaGtqcHJuenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMDA0MjEsImV4cCI6MjA5NzY3NjQyMX0.vza4qGtnkwq4LMM8HNCoHrfOPb8gzC4wse-qk9Yax9M';
+const SUPABASE_URL = 'https://zvanpkuwjptfesliagxr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2YW5wa3V3anB0ZmVzbGlhZ3hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTQ1NTEsImV4cCI6MjA5NzI5MDU1MX0.JNFz25BINrcdQCqGXEu-3DCibOaXRGNMrlZNe3fbTAs';
 // ============================================
 
 let supa = null;
@@ -362,6 +367,7 @@ let scanInterval = null, stream = null, currentDriverId = null;
 let cacheMotoristas = [];
 let fotoFile = null;
 let pendingValidation = null;
+let isScanning = false;
 
 function initSupabase() {
   if(SUPABASE_URL.includes('https://zvanpkuwjptfesliagxr.supabase.co') || SUPABASE_ANON_KEY.includes('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2YW5wa3V3anB0ZmVzbGlhZ3hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTQ1NTEsImV4cCI6MjA5NzI5MDU1MX0.JNFz25BINrcdQCqGXEu-3DCibOaXRGNMrlZNe3fbTAs')) {
@@ -466,55 +472,113 @@ async function uploadFoto(driverId) {
 
 // ============ SCAN ============
 async function startScan() {
-  if(stream) return;
+  if(stream || isScanning) return;
+  isScanning = true;
   document.getElementById('scanResult').innerHTML='';
+  
   try {
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { 
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    });
+    
     const v = document.getElementById('scanVideo');
-    v.style.display='block'; v.srcObject=stream; v.play();
-    document.getElementById('scanPlaceholder').style.display='none';
+    v.style.display = 'block';
+    v.srcObject = stream;
+    await v.play();
+    
+    document.getElementById('scanPlaceholder').style.display = 'none';
     document.getElementById('scanCorners').classList.add('visible');
-    document.getElementById('scanLine').style.display='block';
-    document.getElementById('btnStopScan').style.display='block';
-    scanInterval = setInterval(scanFrame, 400);
+    document.getElementById('scanLine').style.display = 'block';
+    document.getElementById('scanStatus').classList.add('active');
+    document.getElementById('btnStopScan').style.display = 'block';
+    
+    // Aumentado para 600ms para dar mais tempo de processamento
+    scanInterval = setInterval(scanFrame, 600);
   } catch(e) {
-    document.getElementById('scanResult').innerHTML='<div class="result-box fail"><svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--red);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><h3 style="color:var(--red)">Câmera indisponível</h3><p style="color:var(--text2);font-size:13px;margin-top:4px">Verifique as permissões de câmera nas configurações do navegador.</p></div>';
+    isScanning = false;
+    document.getElementById('scanResult').innerHTML = `
+      <div class="result-box fail">
+        <svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--red);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <h3 style="color:var(--red)">Câmera indisponível</h3>
+        <p style="color:var(--text2);font-size:13px;margin-top:4px">Verifique as permissões de câmera nas configurações do navegador.</p>
+      </div>`;
   }
 }
 
 function stopScan() {
-  clearInterval(scanInterval); scanInterval=null;
-  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-  const v=document.getElementById('scanVideo');
-  v.style.display='none'; v.srcObject=null;
-  document.getElementById('scanPlaceholder').style.display='block';
+  isScanning = false;
+  clearInterval(scanInterval);
+  scanInterval = null;
+  
+  if(stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  
+  const v = document.getElementById('scanVideo');
+  v.style.display = 'none';
+  v.srcObject = null;
+  
+  document.getElementById('scanPlaceholder').style.display = 'block';
   document.getElementById('scanCorners').classList.remove('visible');
-  document.getElementById('scanLine').style.display='none';
-  document.getElementById('btnStopScan').style.display='none';
+  document.getElementById('scanLine').style.display = 'none';
+  document.getElementById('scanStatus').classList.remove('active');
+  document.getElementById('btnStopScan').style.display = 'none';
 }
 
+// ============ FUNÇÃO SCAN CORRIGIDA ============
 function scanFrame() {
   const v = document.getElementById('scanVideo');
+  
+  // Verifica se o vídeo está pronto
   if (v.readyState !== v.HAVE_ENOUGH_DATA) return;
   if (!v.videoWidth || !v.videoHeight) return;
+  
   const c = document.getElementById('scanCanvas');
-  // Reduz resolução para melhorar leitura no celular
-  const scale = Math.min(1, 640 / v.videoWidth);
-  c.width  = Math.floor(v.videoWidth  * scale);
-  c.height = Math.floor(v.videoHeight * scale);
+  
+  // 🔥 CORREÇÃO: Usar resolução original para melhor leitura do QR Code
+  c.width = v.videoWidth;
+  c.height = v.videoHeight;
+  
   const ctx = c.getContext('2d');
   ctx.drawImage(v, 0, 0, c.width, c.height);
+  
   try {
-    const img  = ctx.getImageData(0, 0, c.width, c.height);
-    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
-    if (code && code.data) { stopScan(); processQR(code.data); }
-  } catch(e) { /* ignora erros de frame */ }
+    const img = ctx.getImageData(0, 0, c.width, c.height);
+    const code = jsQR(img.data, img.width, img.height, { 
+      inversionAttempts: 'attemptBoth'
+    });
+    
+    if (code && code.data) {
+      // Feedback visual de sucesso
+      document.getElementById('scanStatus').textContent = '✅ QR Code detectado!';
+      
+      // Pequeno delay para feedback visual
+      setTimeout(() => {
+        stopScan();
+        processQR(code.data);
+        document.getElementById('scanStatus').textContent = '📷 Lendo QR Code...';
+      }, 300);
+    }
+  } catch(e) {
+    // Ignora erros de frame
+  }
 }
+// ===============================================
 
 async function processQR(codigo) {
   const div=document.getElementById('scanResult');
   div.innerHTML = '<p style="text-align:center;color:var(--text2);font-size:13px;padding:20px 0">Verificando...</p>';
   const portaria = getPortaria();
+  
   // Tenta buscar por codigo_qr curto primeiro, depois por id (compatibilidade)
   let m = null, error = null;
   const r1 = await supa.from('motoristas').select('*').eq('codigo_qr', codigo).maybeSingle();
