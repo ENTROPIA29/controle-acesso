@@ -127,20 +127,44 @@
   .card:hover { border-color:var(--border2); }
 
   /* ===== SCAN ZONE ===== */
-  .scan-zone { position:relative; background:var(--bg2); border:2px solid var(--border); border-radius:var(--radius); overflow:hidden; aspect-ratio:1; display:flex; align-items:center; justify-content:center; cursor:pointer; margin-bottom:12px; transition:border-color var(--transition-fast), box-shadow var(--transition-fast); }
+  .scan-zone { 
+    position:relative; 
+    background:var(--bg2); 
+    border:2px solid var(--border); 
+    border-radius:var(--radius); 
+    overflow:hidden; 
+    aspect-ratio:1; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    cursor:pointer; 
+    margin-bottom:12px; 
+    transition:border-color var(--transition-fast), box-shadow var(--transition-fast);
+    /* MELHORIA: Fundo mais escuro para melhor contraste com a câmera */
+    background: #000000;
+  }
   .scan-zone:active { transform:scale(0.99); }
-  .scan-zone video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; }
+  .scan-zone video { 
+    position:absolute; 
+    inset:0; 
+    width:100%; 
+    height:100%; 
+    object-fit:cover; 
+    display:none;
+    /* MELHORIA: Aumentar contraste da imagem da câmera */
+    filter: contrast(1.2) brightness(1.1);
+  }
   .scan-zone canvas { display:none; position:absolute; }
   .scan-placeholder { text-align:center; padding:2rem; z-index:1; }
   .scan-placeholder svg { width:56px; height:56px; stroke:var(--text3); fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; margin-bottom:12px; }
   .scan-placeholder p { font-size:14px; color:var(--text2); line-height:1.5; }
   .scan-corners { position:absolute; inset:0; pointer-events:none; z-index:2; display:none; }
   .scan-corners.visible { display:block; }
-  .corner { position:absolute; width:28px; height:28px; }
-  .corner-tl { top:16px; left:16px; border-top:3px solid var(--primary-light); border-left:3px solid var(--primary-light); border-radius:6px 0 0 0; }
-  .corner-tr { top:16px; right:16px; border-top:3px solid var(--primary-light); border-right:3px solid var(--primary-light); border-radius:0 6px 0 0; }
-  .corner-bl { bottom:16px; left:16px; border-bottom:3px solid var(--primary-light); border-left:3px solid var(--primary-light); border-radius:0 0 0 6px; }
-  .corner-br { bottom:16px; right:16px; border-bottom:3px solid var(--primary-light); border-right:3px solid var(--primary-light); border-radius:0 0 6px 0; }
+  .corner { position:absolute; width:32px; height:32px; }
+  .corner-tl { top:16px; left:16px; border-top:4px solid var(--primary-light); border-left:4px solid var(--primary-light); border-radius:6px 0 0 0; }
+  .corner-tr { top:16px; right:16px; border-top:4px solid var(--primary-light); border-right:4px solid var(--primary-light); border-radius:0 6px 0 0; }
+  .corner-bl { bottom:16px; left:16px; border-bottom:4px solid var(--primary-light); border-left:4px solid var(--primary-light); border-radius:0 0 0 6px; }
+  .corner-br { bottom:16px; right:16px; border-bottom:4px solid var(--primary-light); border-right:4px solid var(--primary-light); border-radius:0 0 6px 0; }
   .scan-line { position:absolute; left:12%; right:12%; height:2px; background:linear-gradient(90deg, transparent, var(--primary-light), transparent); z-index:3; display:none; top:20%; animation:scanMove 2s ease-in-out infinite; box-shadow:0 0 20px rgba(27,99,51,0.3); }
   @keyframes scanMove { 0%,100%{top:20%;} 50%{top:78%;} }
 
@@ -181,8 +205,25 @@
   .qr-sheet { text-align:center; }
   .qr-sheet h3 { font-size:18px; font-weight:700; margin-bottom:4px; }
   .qr-sheet p { font-size:13px; color:var(--text2); margin-bottom:20px; }
-  .qr-code-wrap { display:flex; justify-content:center; margin-bottom:20px; }
-  .qr-code-wrap canvas, .qr-code-wrap img { border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.3); }
+  .qr-code-wrap { 
+    display:flex; 
+    justify-content:center; 
+    margin-bottom:20px;
+    /* MELHORIA: Borda branca ao redor do QR Code para melhor contraste */
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  .qr-code-wrap canvas, .qr-code-wrap img { 
+    border-radius: 8px;
+    /* MELHORIA: Garantir que o QR Code seja nítido */
+    image-rendering: pixelated;
+    width: 100%;
+    height: auto;
+    max-width: 250px;
+    max-height: 250px;
+  }
 
   /* QR MODAL - BOTOES DE COMPARTILHAMENTO */
   .share-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
@@ -747,7 +788,7 @@ async function uploadFoto(driverId) {
 }
 
 // ============================================================
-// SCAN
+// SCAN - MELHORADO PARA LER QR CODES COM MAIS FACILIDADE
 // ============================================================
 async function startScan() {
   if (isScanning) return;
@@ -778,16 +819,51 @@ async function startScan() {
     const video = document.getElementById('scanVideo');
     video.style.display = 'block';
     
+    // MELHORIA: Configurações para melhor leitura de QR Code
+    const constraints = {
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        // MELHORIA: Ajustes de foco e exposição
+        advanced: [
+          { focusMode: 'continuous' },
+          { exposureMode: 'continuous' }
+        ]
+      }
+    };
+    
     await zxingReader.decodeFromConstraints(
-      { video: { facingMode: 'environment' } },
+      constraints,
       video,
       (result, err) => {
         if (result) {
+          // MELHORIA: Feedback tátil/vibrar quando ler
+          if (navigator.vibrate) navigator.vibrate(100);
           stopScan();
           processQR(result.getText());
         }
       }
     );
+    
+    // MELHORIA: Aplicar zoom digital (se disponível)
+    try {
+      const stream = video.srcObject;
+      if (stream) {
+        const track = stream.getVideoTracks()[0];
+        if (track && track.getCapabilities && track.getCapabilities().zoom) {
+          const capabilities = track.getCapabilities();
+          if (capabilities.zoom.max > 1) {
+            await track.applyConstraints({
+              advanced: [{ zoom: Math.min(capabilities.zoom.max, 2) }]
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Zoom não disponível:', e);
+    }
+    
   } catch (e) {
     console.error('Erro câmera:', e);
     document.getElementById('scanPlaceholder').style.display = 'block';
@@ -797,6 +873,9 @@ async function startScan() {
         <p style="color:var(--text2);font-size:13px;margin-top:4px">
           Verifique as permissões de câmera e tente novamente.
         </p>
+        <button class="btn btn-ghost" style="margin-top:12px" onclick="startScan()">
+          🔄 Tentar novamente
+        </button>
       </div>`;
     isScanning = false;
   }
@@ -1088,7 +1167,7 @@ document.getElementById('f-whats').addEventListener('input', function() {
 });
 
 // ============================================================
-// QR CODE MODAL
+// QR CODE MODAL - COM QR CODE MELHORADO
 // ============================================================
 let qrWhatsAtual = '';
 
@@ -1110,14 +1189,38 @@ function showQRFor(id, nome, placa, empresa, whatsapp) {
   qrDiv.innerHTML = '';
   
   try {
+    // MELHORIA: QR Code com maior tamanho e melhor contraste
     new QRCode(qrDiv, {
       text: id,
-      width: 220,
-      height: 220,
+      width: 280,    // Aumentado de 220 para 280
+      height: 280,   // Aumentado de 220 para 280
       colorDark: '#000000',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.H
+      colorLight: '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.H  // Máxima correção de erro
     });
+    
+    // MELHORIA: Adicionar borda extra ao redor do QR Code
+    const canvas = qrDiv.querySelector('canvas');
+    if (canvas) {
+      // Criar um canvas com borda branca
+      const newCanvas = document.createElement('canvas');
+      const size = canvas.width;
+      newCanvas.width = size + 40;
+      newCanvas.height = size + 40;
+      const ctx = newCanvas.getContext('2d');
+      
+      // Fundo branco
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+      
+      // Desenhar o QR Code no centro
+      ctx.drawImage(canvas, 20, 20);
+      
+      // Substituir o canvas original
+      qrDiv.innerHTML = '';
+      qrDiv.appendChild(newCanvas);
+    }
+    
   } catch (e) {
     console.error('Erro ao gerar QR:', e);
     qrDiv.innerHTML = '<p style="color:var(--red)">Erro ao gerar QR Code</p>';
@@ -1131,21 +1234,19 @@ function showQRFor(id, nome, placa, empresa, whatsapp) {
 }
 
 // ============================================================
-// FUNÇÕES DE COMPARTILHAMENTO MELHORADAS
+// FUNÇÕES DE COMPARTILHAMENTO
 // ============================================================
 
-// 1. ENVIAR PELO WHATSAPP (COM CONFIRMAÇÃO)
+// 1. ENVIAR PELO WHATSAPP
 async function enviarImagemWhatsapp() {
   if (!qrWhatsAtual) {
     showToast('Número de WhatsApp não cadastrado para este motorista');
     return;
   }
 
-  // Formata o número para exibição
   const numeroFormatado = qrWhatsAtual.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
   const nome = document.getElementById('qrNome').textContent;
   
-  // Confirmação antes de enviar
   const confirmar = confirm(
     `📱 Enviar QR Code para o WhatsApp do motorista?\n\n` +
     `👤 ${nome}\n` +
@@ -1172,7 +1273,6 @@ async function enviarImagemWhatsapp() {
         return;
       }
 
-      // MÉTODO 1: Web Share API (compartilha com qualquer app)
       if (navigator.share && navigator.canShare) {
         const file = new File([blob], `qrcode-${nome.replace(/\s+/g, '-')}.png`, { 
           type: 'image/png' 
@@ -1200,16 +1300,13 @@ async function enviarImagemWhatsapp() {
         }
       }
 
-      // MÉTODO 2: Link direto do WhatsApp (fallback)
       const imageUrl = canvas.toDataURL('image/png');
       
-      // Baixa a imagem
       const link = document.createElement('a');
       link.download = `qrcode-${nome.replace(/\s+/g, '-')}.png`;
       link.href = imageUrl;
       link.click();
 
-      // Abre o WhatsApp com a mensagem personalizada
       setTimeout(() => {
         const msg = encodeURIComponent(
           `🚛 *QR Code de Acesso - Transzilli*\n\n` +
@@ -1310,7 +1407,7 @@ function enviarPorEmail() {
 }
 
 // ============================================================
-// FUNÇÕES ORIGINAIS DE FECHAMENTO DE MODAIS (MANTIDAS)
+// FUNÇÕES ORIGINAIS DE FECHAMENTO DE MODAIS
 // ============================================================
 function closeQR(e) {
   if (e.target === document.getElementById('qrModal')) {
