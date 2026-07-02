@@ -494,12 +494,12 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module">
+<script>
 // ============================================================
-// CONFIGURAÇÃO - VARIÁVEIS DE AMBIENTE
+// CONFIGURAÇÃO
 // ============================================================
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = 'https://wqzbmlfiwmjhkjprnzrv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxemJtbGZpd21qaGtqcHJuenJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMDA0MjEsImV4cCI6MjA5NzY3NjQyMX0.vza4qGtnkwq4LMM8HNCoHrfOPb8gzC4wse-qk9Yax9M';
 
 // ============================================================
 // UTILITÁRIOS
@@ -586,60 +586,17 @@ function hideLoading() {
 // SUPABASE
 // ============================================================
 function initSupabase() {
-  // ✅ Verifica se as variáveis de ambiente estão configuradas
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  if (SUPABASE_URL.includes('https://zvanpkuwjptfesliagxr.supabase.co') || 
+      SUPABASE_ANON_KEY.includes('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2YW5wa3V3anB0ZmVzbGlhZ3hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTQ1NTEsImV4cCI6MjA5NzI5MDU1MX0.JNFz25BINrcdQCqGXEu-3DCibOaXRGNMrlZNe3fbTAs')) {
     document.getElementById('configCheck').innerHTML = `
       <div class="config-warning">
-        <h2>⚠️ Configuração necessária</h2>
-        <p>O arquivo <code>.env</code> não foi configurado ou está faltando.</p>
-        <p>Copie o arquivo <code>.env.example</code> para <code>.env</code> e preencha com suas chaves.</p>
-        <div style="background:var(--bg3);padding:12px;border-radius:8px;margin-top:12px;text-align:left;font-size:12px;">
-          <strong>📝 Exemplo .env:</strong><br>
-          <code>VITE_SUPABASE_URL=https://seu-projeto.supabase.co</code><br>
-          <code>VITE_SUPABASE_ANON_KEY=sua-chave-aqui</code>
-        </div>
-        <p style="margin-top:8px;color:var(--text3);font-size:11px;">
-          🔒 Não compartilhe seu arquivo .env!
-        </p>
+        <h2>⚠ Configuração necessária</h2>
+        <p>Abra o arquivo e preencha <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code> com os dados do seu projeto Supabase.</p>
       </div>`;
     return false;
   }
-  
-  // ✅ Verifica se são as chaves de exemplo (ainda não configuradas)
-  if (SUPABASE_URL.includes('seu-projeto') || 
-      SUPABASE_ANON_KEY.includes('sua-chave-aqui')) {
-    document.getElementById('configCheck').innerHTML = `
-      <div class="config-warning">
-        <h2>⚠️ Configure suas chaves</h2>
-        <p>Substitua as chaves de exemplo no arquivo <code>.env</code>.</p>
-        <p>Use as chaves reais do seu projeto Supabase.</p>
-        <div style="background:var(--bg3);padding:12px;border-radius:8px;margin-top:12px;text-align:left;font-size:12px;">
-          <strong>🔑 Onde encontrar suas chaves:</strong><br>
-          1. Acesse: <code>https://supabase.com/dashboard</code><br>
-          2. Selecione seu projeto<br>
-          3. Vá em: <code>Settings > API</code><br>
-          4. Copie a <code>URL</code> e <code>anon public key</code>
-        </div>
-      </div>`;
-    return false;
-  }
-  
-  // ✅ Tudo certo! Inicializa o Supabase
-  try {
-    supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('✅ Supabase conectado com sucesso!');
-    return true;
-  } catch (e) {
-    console.error('❌ Erro ao conectar ao Supabase:', e);
-    document.getElementById('configCheck').innerHTML = `
-      <div class="config-warning">
-        <h2>❌ Erro de conexão</h2>
-        <p>Não foi possível conectar ao Supabase.</p>
-        <p style="color:var(--text2);font-size:12px;">${e.message}</p>
-        <p style="margin-top:8px;">Verifique suas chaves no arquivo <code>.env</code>.</p>
-      </div>`;
-    return false;
-  }
+  supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return true;
 }
 
 // ============================================================
@@ -1513,8 +1470,15 @@ async function deleteDriver() {
 }
 
 // ============================================================
-// RELATÓRIOS DE MOTORISTAS
 // ============================================================
+// RELATÓRIOS DE MOTORISTAS (CSV e PDF MELHORADOS)
+// ============================================================
+// ============================================================
+
+/**
+ * EXPORTAÇÃO CSV - MOTORISTAS
+ * Versão melhorada com cabeçalhos claros e formatação
+ */
 function exportarMotoristasCSV() {
   const busca = (document.getElementById('busca').value || '').toLowerCase();
   const filtrados = allMotoristas.filter(m =>
@@ -1528,23 +1492,37 @@ function exportarMotoristasCSV() {
     return;
   }
 
+  // Cabeçalhos em português claro e organizado
   const headers = [
-    'Nº', 'NOME COMPLETO', 'CPF', 'CNH',
-    'PLACA DO VEÍCULO', 'EMPRESA/TRANSPORTADORA',
-    'WHATSAPP', 'STATUS', 'CADASTRO'
+    'Nº',
+    'NOME COMPLETO',
+    'CPF',
+    'CNH',
+    'PLACA DO VEÍCULO',
+    'EMPRESA/TRANSPORTADORA',
+    'WHATSAPP',
+    'STATUS',
+    'CADASTRO'
   ];
 
+  // Dados formatados
   const rows = filtrados.map((m, index) => [
-    index + 1, m.nome || '', m.cpf || '', m.cnh || '',
-    m.placa || '', m.empresa || '',
+    index + 1,
+    m.nome || '',
+    m.cpf || '',
+    m.cnh || '',
+    m.placa || '',
+    m.empresa || '',
     m.whatsapp ? Utils.formatPhone(m.whatsapp) : '',
     m.status ? m.status.toUpperCase() : '',
     m.criado_em ? new Date(m.criado_em).toLocaleDateString('pt-BR') : ''
   ]);
 
+  // Construir CSV com separador ; para melhor compatibilidade
   const csvLines = [];
   csvLines.push(headers.join(';'));
   rows.forEach(row => {
+    // Escapar campos que contenham ; ou "
     const escapedRow = row.map(cell => {
       if (typeof cell === 'string' && (cell.includes(';') || cell.includes('"') || cell.includes('\n'))) {
         return `"${cell.replace(/"/g, '""')}"`;
@@ -1555,6 +1533,7 @@ function exportarMotoristasCSV() {
   });
 
   const csvContent = csvLines.join('\n');
+  // Adicionar BOM para suporte a acentos no Excel
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   
   const link = document.createElement('a');
@@ -1567,6 +1546,9 @@ function exportarMotoristasCSV() {
   showToast(`CSV exportado com ${filtrados.length} motoristas ✓`);
 }
 
+/**
+ * EXPORTAÇÃO PDF - MOTORISTAS (SIMPLES E BONITO)
+ */
 function exportarMotoristasPDF() {
   const busca = (document.getElementById('busca').value || '').toLowerCase();
   const filtrados = allMotoristas.filter(m =>
@@ -1581,8 +1563,9 @@ function exportarMotoristasPDF() {
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('l', 'pt', 'a4');
+  const doc = new jsPDF('l', 'pt', 'a4'); // Landscape para mais colunas
 
+  // ===== CABEÇALHO =====
   doc.setFillColor(27, 99, 51);
   doc.rect(0, 0, doc.internal.pageSize.width, 70, 'F');
   
@@ -1594,6 +1577,7 @@ function exportarMotoristasPDF() {
   doc.setTextColor(200, 220, 200);
   doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 55);
   
+  // ===== ESTATÍSTICAS =====
   const total = filtrados.length;
   const autorizados = filtrados.filter(x => x.status === 'autorizado').length;
   const pendentes = filtrados.filter(x => x.status === 'pendente').length;
@@ -1606,10 +1590,14 @@ function exportarMotoristasPDF() {
   doc.text(`⏳ Pendentes: ${pendentes}`, 340, 90);
   doc.text(`✗ Bloqueados: ${bloqueados}`, 490, 90);
 
+  // ===== TABELA =====
   const headers = [['#', 'Nome', 'CPF', 'Placa', 'Empresa', 'WhatsApp', 'Status']];
   const data = filtrados.map((m, i) => [
-    i + 1, m.nome || '', m.cpf || '',
-    m.placa || '', m.empresa || '',
+    i + 1,
+    m.nome || '',
+    m.cpf || '',
+    m.placa || '',
+    m.empresa || '',
     m.whatsapp ? Utils.formatPhone(m.whatsapp) : '',
     m.status ? m.status.toUpperCase() : ''
   ]);
@@ -1619,9 +1607,21 @@ function exportarMotoristasPDF() {
     head: headers,
     body: data,
     theme: 'striped',
-    styles: { fontSize: 8, cellPadding: 4, halign: 'left', valign: 'middle' },
-    headStyles: { fillColor: [27, 99, 51], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [245, 248, 245] },
+    styles: { 
+      fontSize: 8, 
+      cellPadding: 4,
+      halign: 'left',
+      valign: 'middle'
+    },
+    headStyles: { 
+      fillColor: [27, 99, 51], 
+      textColor: [255, 255, 255],
+      fontSize: 9,
+      fontStyle: 'bold'
+    },
+    alternateRowStyles: {
+      fillColor: [245, 248, 245]
+    },
     columnStyles: {
       0: { cellWidth: 30, halign: 'center' },
       1: { cellWidth: 120 },
@@ -1634,6 +1634,7 @@ function exportarMotoristasPDF() {
     margin: { left: 30, right: 30 }
   });
 
+  // ===== RODAPÉ =====
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -1649,6 +1650,9 @@ function exportarMotoristasPDF() {
   showToast('PDF exportado com sucesso ✓');
 }
 
+/**
+ * EXPORTAÇÃO RELATÓRIO COMPLETO - MOTORISTAS (COM TODOS OS CAMPOS)
+ */
 function exportarMotoristasCompleto() {
   const busca = (document.getElementById('busca').value || '').toLowerCase();
   const filtrados = allMotoristas.filter(m =>
@@ -1665,6 +1669,7 @@ function exportarMotoristasCompleto() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l', 'pt', 'a4');
 
+  // ===== CABEÇALHO =====
   doc.setFillColor(27, 99, 51);
   doc.rect(0, 0, doc.internal.pageSize.width, 70, 'F');
   
@@ -1676,6 +1681,7 @@ function exportarMotoristasCompleto() {
   doc.setTextColor(200, 220, 200);
   doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 55);
 
+  // ===== ESTATÍSTICAS =====
   const total = filtrados.length;
   const autorizados = filtrados.filter(x => x.status === 'autorizado').length;
   const pendentes = filtrados.filter(x => x.status === 'pendente').length;
@@ -1688,10 +1694,15 @@ function exportarMotoristasCompleto() {
   doc.text(`⏳ Pendentes: ${pendentes}`, 340, 90);
   doc.text(`✗ Bloqueados: ${bloqueados}`, 490, 90);
 
+  // ===== TABELA COMPLETA =====
   const headers = [['#', 'Nome', 'CPF', 'CNH', 'Placa', 'Empresa', 'WhatsApp', 'Status', 'Cadastro']];
   const data = filtrados.map((m, i) => [
-    i + 1, m.nome || '', m.cpf || '', m.cnh || '',
-    m.placa || '', m.empresa || '',
+    i + 1,
+    m.nome || '',
+    m.cpf || '',
+    m.cnh || '',
+    m.placa || '',
+    m.empresa || '',
     m.whatsapp ? Utils.formatPhone(m.whatsapp) : '',
     m.status ? m.status.toUpperCase() : '',
     m.criado_em ? new Date(m.criado_em).toLocaleDateString('pt-BR') : ''
@@ -1702,8 +1713,18 @@ function exportarMotoristasCompleto() {
     head: headers,
     body: data,
     theme: 'grid',
-    styles: { fontSize: 7, cellPadding: 3, halign: 'left', valign: 'middle' },
-    headStyles: { fillColor: [27, 99, 51], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+    styles: { 
+      fontSize: 7, 
+      cellPadding: 3,
+      halign: 'left',
+      valign: 'middle'
+    },
+    headStyles: { 
+      fillColor: [27, 99, 51], 
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold'
+    },
     columnStyles: {
       0: { cellWidth: 25, halign: 'center' },
       1: { cellWidth: 110 },
@@ -1718,6 +1739,7 @@ function exportarMotoristasCompleto() {
     margin: { left: 25, right: 25 }
   });
 
+  // ===== RODAPÉ =====
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -1734,8 +1756,15 @@ function exportarMotoristasCompleto() {
 }
 
 // ============================================================
-// RELATÓRIOS DE HISTÓRICO
 // ============================================================
+// RELATÓRIOS DE HISTÓRICO (CSV e PDF MELHORADOS)
+// ============================================================
+// ============================================================
+
+/**
+ * EXPORTAÇÃO CSV - HISTÓRICO DE VALIDAÇÕES
+ * Versão melhorada com todos os campos e formatação clara
+ */
 async function exportarLogCSV() {
   if (!Utils.isOnline()) {
     showToast('Sem conexão com a internet');
@@ -1764,9 +1793,18 @@ async function exportarLogCSV() {
       return;
     }
 
+    // Cabeçalhos claros e organizados
     const headers = [
-      'DATA/HORA', 'MOTORISTA', 'CPF', 'PLACA', 'EMPRESA',
-      'TIPO', 'SERVIÇO', 'EMPRESA SERVIÇO', 'PORTARIA', 'STATUS'
+      'DATA/HORA',
+      'MOTORISTA',
+      'CPF',
+      'PLACA',
+      'EMPRESA',
+      'TIPO',
+      'SERVIÇO',
+      'EMPRESA SERVIÇO',
+      'PORTARIA',
+      'STATUS'
     ];
 
     const rows = data.map(l => [
@@ -1812,6 +1850,10 @@ async function exportarLogCSV() {
   }
 }
 
+/**
+ * EXPORTAÇÃO PDF - HISTÓRICO DE VALIDAÇÕES
+ * Com layout profissional, estatísticas e formatação bonita
+ */
 async function exportarLogPDF() {
   if (!Utils.isOnline()) {
     showToast('Sem conexão com a internet');
@@ -1843,6 +1885,7 @@ async function exportarLogPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'pt', 'a4');
 
+    // ===== CABEÇALHO =====
     doc.setFillColor(27, 99, 51);
     doc.rect(0, 0, doc.internal.pageSize.width, 70, 'F');
     
@@ -1855,6 +1898,7 @@ async function exportarLogPDF() {
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 55);
     doc.text(`Portaria: ${portaria.nome}`, 400, 55);
 
+    // ===== ESTATÍSTICAS =====
     const total = data.length;
     const entradas = data.filter(x => x.tipo === 'entrada').length;
     const saidas = data.filter(x => x.tipo === 'saida').length;
@@ -1874,6 +1918,7 @@ async function exportarLogPDF() {
     doc.text(`✗ Negados: ${negados}`, 40, yPos);
     doc.text(`📦 Com serviço: ${servicos}`, 180, yPos);
 
+    // ===== TABELA =====
     const headers = [['Data/Hora', 'Motorista', 'Placa', 'Empresa', 'Tipo', 'Serviço', 'Empresa Serv.', 'Status']];
     const tableData = data.slice(0, 100).map(l => [
       new Date(l.dt).toLocaleString('pt-BR'),
@@ -1891,9 +1936,21 @@ async function exportarLogPDF() {
       head: headers,
       body: tableData,
       theme: 'striped',
-      styles: { fontSize: 7, cellPadding: 4, halign: 'left', valign: 'middle' },
-      headStyles: { fillColor: [27, 99, 51], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [245, 248, 245] },
+      styles: { 
+        fontSize: 7, 
+        cellPadding: 4,
+        halign: 'left',
+        valign: 'middle'
+      },
+      headStyles: { 
+        fillColor: [27, 99, 51], 
+        textColor: [255, 255, 255],
+        fontSize: 8,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 248, 245]
+      },
       columnStyles: {
         0: { cellWidth: 120 },
         1: { cellWidth: 130 },
@@ -1907,6 +1964,7 @@ async function exportarLogPDF() {
       margin: { left: 25, right: 25 }
     });
 
+    // ===== RODAPÉ =====
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -1977,19 +2035,10 @@ window.addEventListener('online', () => { showToast('Conexão restaurada ✓', 1
 window.addEventListener('offline', () => { showToast('Sem conexão com a internet ⚠', 3000); });
 
 // ============================================================
-// START - CORRIGIDO!
+// START
 // ============================================================
-console.log('🔑 SUPABASE_URL:', SUPABASE_URL);
-console.log('🔑 SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Configurada' : '❌ Não configurada');
-
 (function start() {
-  if (!initSupabase()) {
-    console.log('❌ Supabase NÃO conectado!');
-    return;
-  }
-  
-  console.log('✅ Supabase conectado com sucesso!');
-  
+  if (!initSupabase()) return;
   const p = getPortaria();
   if (p) {
     iniciarApp();
@@ -1997,7 +2046,8 @@ console.log('🔑 SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Configurada' : '
     document.getElementById('loginScreen').style.display = 'flex';
   }
 })();
-
+console.log('🔑 SUPABASE_URL:', SUPABASE_URL);
+console.log('🔑 SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Configurada' : '❌ Não configurada');
 </script>
 </body>
 </html>
