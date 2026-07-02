@@ -496,13 +496,11 @@
 
 <script>
 // ============================================================
-// CONFIGURAÇÃO
+// CONFIGURAÇÃO - VARIÁVEIS DE AMBIENTE
 // ============================================================
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-console.log('🔑 SUPABASE_URL:', SUPABASE_URL);
-console.log('🔑 SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Configurada' : '❌ Não configurada');
 // ============================================================
 // UTILITÁRIOS
 // ============================================================
@@ -1515,15 +1513,8 @@ async function deleteDriver() {
 }
 
 // ============================================================
+// RELATÓRIOS DE MOTORISTAS
 // ============================================================
-// RELATÓRIOS DE MOTORISTAS (CSV e PDF MELHORADOS)
-// ============================================================
-// ============================================================
-
-/**
- * EXPORTAÇÃO CSV - MOTORISTAS
- * Versão melhorada com cabeçalhos claros e formatação
- */
 function exportarMotoristasCSV() {
   const busca = (document.getElementById('busca').value || '').toLowerCase();
   const filtrados = allMotoristas.filter(m =>
@@ -1537,37 +1528,23 @@ function exportarMotoristasCSV() {
     return;
   }
 
-  // Cabeçalhos em português claro e organizado
   const headers = [
-    'Nº',
-    'NOME COMPLETO',
-    'CPF',
-    'CNH',
-    'PLACA DO VEÍCULO',
-    'EMPRESA/TRANSPORTADORA',
-    'WHATSAPP',
-    'STATUS',
-    'CADASTRO'
+    'Nº', 'NOME COMPLETO', 'CPF', 'CNH',
+    'PLACA DO VEÍCULO', 'EMPRESA/TRANSPORTADORA',
+    'WHATSAPP', 'STATUS', 'CADASTRO'
   ];
 
-  // Dados formatados
   const rows = filtrados.map((m, index) => [
-    index + 1,
-    m.nome || '',
-    m.cpf || '',
-    m.cnh || '',
-    m.placa || '',
-    m.empresa || '',
+    index + 1, m.nome || '', m.cpf || '', m.cnh || '',
+    m.placa || '', m.empresa || '',
     m.whatsapp ? Utils.formatPhone(m.whatsapp) : '',
     m.status ? m.status.toUpperCase() : '',
     m.criado_em ? new Date(m.criado_em).toLocaleDateString('pt-BR') : ''
   ]);
 
-  // Construir CSV com separador ; para melhor compatibilidade
   const csvLines = [];
   csvLines.push(headers.join(';'));
   rows.forEach(row => {
-    // Escapar campos que contenham ; ou "
     const escapedRow = row.map(cell => {
       if (typeof cell === 'string' && (cell.includes(';') || cell.includes('"') || cell.includes('\n'))) {
         return `"${cell.replace(/"/g, '""')}"`;
@@ -1578,7 +1555,6 @@ function exportarMotoristasCSV() {
   });
 
   const csvContent = csvLines.join('\n');
-  // Adicionar BOM para suporte a acentos no Excel
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   
   const link = document.createElement('a');
@@ -1591,9 +1567,6 @@ function exportarMotoristasCSV() {
   showToast(`CSV exportado com ${filtrados.length} motoristas ✓`);
 }
 
-/**
- * EXPORTAÇÃO PDF - MOTORISTAS (SIMPLES E BONITO)
- */
 function exportarMotoristasPDF() {
   const busca = (document.getElementById('busca').value || '').toLowerCase();
   const filtrados = allMotoristas.filter(m =>
@@ -1608,9 +1581,8 @@ function exportarMotoristasPDF() {
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('l', 'pt', 'a4'); // Landscape para mais colunas
+  const doc = new jsPDF('l', 'pt', 'a4');
 
-  // ===== CABEÇALHO =====
   doc.setFillColor(27, 99, 51);
   doc.rect(0, 0, doc.internal.pageSize.width, 70, 'F');
   
@@ -1622,7 +1594,6 @@ function exportarMotoristasPDF() {
   doc.setTextColor(200, 220, 200);
   doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 55);
   
-  // ===== ESTATÍSTICAS =====
   const total = filtrados.length;
   const autorizados = filtrados.filter(x => x.status === 'autorizado').length;
   const pendentes = filtrados.filter(x => x.status === 'pendente').length;
@@ -1635,14 +1606,10 @@ function exportarMotoristasPDF() {
   doc.text(`⏳ Pendentes: ${pendentes}`, 340, 90);
   doc.text(`✗ Bloqueados: ${bloqueados}`, 490, 90);
 
-  // ===== TABELA =====
   const headers = [['#', 'Nome', 'CPF', 'Placa', 'Empresa', 'WhatsApp', 'Status']];
   const data = filtrados.map((m, i) => [
-    i + 1,
-    m.nome || '',
-    m.cpf || '',
-    m.placa || '',
-    m.empresa || '',
+    i + 1, m.nome || '', m.cpf || '',
+    m.placa || '', m.empresa || '',
     m.whatsapp ? Utils.formatPhone(m.whatsapp) : '',
     m.status ? m.status.toUpperCase() : ''
   ]);
@@ -1652,21 +1619,9 @@ function exportarMotoristasPDF() {
     head: headers,
     body: data,
     theme: 'striped',
-    styles: { 
-      fontSize: 8, 
-      cellPadding: 4,
-      halign: 'left',
-      valign: 'middle'
-    },
-    headStyles: { 
-      fillColor: [27, 99, 51], 
-      textColor: [255, 255, 255],
-      fontSize: 9,
-      fontStyle: 'bold'
-    },
-    alternateRowStyles: {
-      fillColor: [245, 248, 245]
-    },
+    styles: { fontSize: 8, cellPadding: 4, halign: 'left', valign: 'middle' },
+    headStyles: { fillColor: [27, 99, 51], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 248, 245] },
     columnStyles: {
       0: { cellWidth: 30, halign: 'center' },
       1: { cellWidth: 120 },
@@ -1679,7 +1634,6 @@ function exportarMotoristasPDF() {
     margin: { left: 30, right: 30 }
   });
 
-  // ===== RODAPÉ =====
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -1695,9 +1649,6 @@ function exportarMotoristasPDF() {
   showToast('PDF exportado com sucesso ✓');
 }
 
-/**
- * EXPORTAÇÃO RELATÓRIO COMPLETO - MOTORISTAS (COM TODOS OS CAMPOS)
- */
 function exportarMotoristasCompleto() {
   const busca = (document.getElementById('busca').value || '').toLowerCase();
   const filtrados = allMotoristas.filter(m =>
@@ -1714,7 +1665,6 @@ function exportarMotoristasCompleto() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l', 'pt', 'a4');
 
-  // ===== CABEÇALHO =====
   doc.setFillColor(27, 99, 51);
   doc.rect(0, 0, doc.internal.pageSize.width, 70, 'F');
   
@@ -1726,7 +1676,6 @@ function exportarMotoristasCompleto() {
   doc.setTextColor(200, 220, 200);
   doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 55);
 
-  // ===== ESTATÍSTICAS =====
   const total = filtrados.length;
   const autorizados = filtrados.filter(x => x.status === 'autorizado').length;
   const pendentes = filtrados.filter(x => x.status === 'pendente').length;
@@ -1739,15 +1688,10 @@ function exportarMotoristasCompleto() {
   doc.text(`⏳ Pendentes: ${pendentes}`, 340, 90);
   doc.text(`✗ Bloqueados: ${bloqueados}`, 490, 90);
 
-  // ===== TABELA COMPLETA =====
   const headers = [['#', 'Nome', 'CPF', 'CNH', 'Placa', 'Empresa', 'WhatsApp', 'Status', 'Cadastro']];
   const data = filtrados.map((m, i) => [
-    i + 1,
-    m.nome || '',
-    m.cpf || '',
-    m.cnh || '',
-    m.placa || '',
-    m.empresa || '',
+    i + 1, m.nome || '', m.cpf || '', m.cnh || '',
+    m.placa || '', m.empresa || '',
     m.whatsapp ? Utils.formatPhone(m.whatsapp) : '',
     m.status ? m.status.toUpperCase() : '',
     m.criado_em ? new Date(m.criado_em).toLocaleDateString('pt-BR') : ''
@@ -1758,18 +1702,8 @@ function exportarMotoristasCompleto() {
     head: headers,
     body: data,
     theme: 'grid',
-    styles: { 
-      fontSize: 7, 
-      cellPadding: 3,
-      halign: 'left',
-      valign: 'middle'
-    },
-    headStyles: { 
-      fillColor: [27, 99, 51], 
-      textColor: [255, 255, 255],
-      fontSize: 8,
-      fontStyle: 'bold'
-    },
+    styles: { fontSize: 7, cellPadding: 3, halign: 'left', valign: 'middle' },
+    headStyles: { fillColor: [27, 99, 51], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
     columnStyles: {
       0: { cellWidth: 25, halign: 'center' },
       1: { cellWidth: 110 },
@@ -1784,7 +1718,6 @@ function exportarMotoristasCompleto() {
     margin: { left: 25, right: 25 }
   });
 
-  // ===== RODAPÉ =====
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -1801,15 +1734,8 @@ function exportarMotoristasCompleto() {
 }
 
 // ============================================================
+// RELATÓRIOS DE HISTÓRICO
 // ============================================================
-// RELATÓRIOS DE HISTÓRICO (CSV e PDF MELHORADOS)
-// ============================================================
-// ============================================================
-
-/**
- * EXPORTAÇÃO CSV - HISTÓRICO DE VALIDAÇÕES
- * Versão melhorada com todos os campos e formatação clara
- */
 async function exportarLogCSV() {
   if (!Utils.isOnline()) {
     showToast('Sem conexão com a internet');
@@ -1838,18 +1764,9 @@ async function exportarLogCSV() {
       return;
     }
 
-    // Cabeçalhos claros e organizados
     const headers = [
-      'DATA/HORA',
-      'MOTORISTA',
-      'CPF',
-      'PLACA',
-      'EMPRESA',
-      'TIPO',
-      'SERVIÇO',
-      'EMPRESA SERVIÇO',
-      'PORTARIA',
-      'STATUS'
+      'DATA/HORA', 'MOTORISTA', 'CPF', 'PLACA', 'EMPRESA',
+      'TIPO', 'SERVIÇO', 'EMPRESA SERVIÇO', 'PORTARIA', 'STATUS'
     ];
 
     const rows = data.map(l => [
@@ -1895,10 +1812,6 @@ async function exportarLogCSV() {
   }
 }
 
-/**
- * EXPORTAÇÃO PDF - HISTÓRICO DE VALIDAÇÕES
- * Com layout profissional, estatísticas e formatação bonita
- */
 async function exportarLogPDF() {
   if (!Utils.isOnline()) {
     showToast('Sem conexão com a internet');
@@ -1930,7 +1843,6 @@ async function exportarLogPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'pt', 'a4');
 
-    // ===== CABEÇALHO =====
     doc.setFillColor(27, 99, 51);
     doc.rect(0, 0, doc.internal.pageSize.width, 70, 'F');
     
@@ -1943,7 +1855,6 @@ async function exportarLogPDF() {
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 55);
     doc.text(`Portaria: ${portaria.nome}`, 400, 55);
 
-    // ===== ESTATÍSTICAS =====
     const total = data.length;
     const entradas = data.filter(x => x.tipo === 'entrada').length;
     const saidas = data.filter(x => x.tipo === 'saida').length;
@@ -1963,7 +1874,6 @@ async function exportarLogPDF() {
     doc.text(`✗ Negados: ${negados}`, 40, yPos);
     doc.text(`📦 Com serviço: ${servicos}`, 180, yPos);
 
-    // ===== TABELA =====
     const headers = [['Data/Hora', 'Motorista', 'Placa', 'Empresa', 'Tipo', 'Serviço', 'Empresa Serv.', 'Status']];
     const tableData = data.slice(0, 100).map(l => [
       new Date(l.dt).toLocaleString('pt-BR'),
@@ -1981,21 +1891,9 @@ async function exportarLogPDF() {
       head: headers,
       body: tableData,
       theme: 'striped',
-      styles: { 
-        fontSize: 7, 
-        cellPadding: 4,
-        halign: 'left',
-        valign: 'middle'
-      },
-      headStyles: { 
-        fillColor: [27, 99, 51], 
-        textColor: [255, 255, 255],
-        fontSize: 8,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 248, 245]
-      },
+      styles: { fontSize: 7, cellPadding: 4, halign: 'left', valign: 'middle' },
+      headStyles: { fillColor: [27, 99, 51], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 248, 245] },
       columnStyles: {
         0: { cellWidth: 120 },
         1: { cellWidth: 130 },
@@ -2009,7 +1907,6 @@ async function exportarLogPDF() {
       margin: { left: 25, right: 25 }
     });
 
-    // ===== RODAPÉ =====
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -2080,10 +1977,19 @@ window.addEventListener('online', () => { showToast('Conexão restaurada ✓', 1
 window.addEventListener('offline', () => { showToast('Sem conexão com a internet ⚠', 3000); });
 
 // ============================================================
-// START
+// START - CORRIGIDO!
 // ============================================================
+console.log('🔑 SUPABASE_URL:', SUPABASE_URL);
+console.log('🔑 SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Configurada' : '❌ Não configurada');
+
 (function start() {
-  if (!initSupabase()) return;
+  if (!initSupabase()) {
+    console.log('❌ Supabase NÃO conectado!');
+    return;
+  }
+  
+  console.log('✅ Supabase conectado com sucesso!');
+  
   const p = getPortaria();
   if (p) {
     iniciarApp();
@@ -2091,18 +1997,7 @@ window.addEventListener('offline', () => { showToast('Sem conexão com a interne
     document.getElementById('loginScreen').style.display = 'flex';
   }
 })();
-console.log('🔑 SUPABASE_URL:', SUPABASE_URL);
-console.log('🔑 SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Configurada' : '❌ Não configurada');
-// Adicione no final do arquivo, antes do </script>
-console.log('🌐 URL do Supabase:', SUPABASE_URL);
-console.log('🔑 Chave configurada:', SUPABASE_ANON_KEY ? '✅ Sim' : '❌ Não');
 
-// Teste rápido de conexão
-if (supa) {
-  console.log('✅ Supabase conectado!');
-} else {
-  console.log('❌ Supabase NÃO conectado!');
-}
 </script>
 </body>
 </html>
